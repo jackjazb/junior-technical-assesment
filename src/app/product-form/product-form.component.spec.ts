@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ProductFormComponent } from './product-form.component';
 import { ReactiveFormsModule } from '@angular/forms';
+import { Subject } from 'rxjs';
 import { Product } from '../models/product.model';
+import { ProductFormComponent } from './product-form.component';
 
 describe('ProductFormComponent', () => {
   let component: ProductFormComponent;
@@ -10,8 +11,7 @@ describe('ProductFormComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ProductFormComponent, ReactiveFormsModule]
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ProductFormComponent);
     component = fixture.componentInstance;
@@ -91,12 +91,26 @@ describe('ProductFormComponent', () => {
     expect(emitSpy).not.toHaveBeenCalled();
   });
 
-  xit('should emit cancel event', () => {
-    // @fixme complete this test
+  it('should emit the cancel event', () => {
+    const emitSpy = jest.spyOn(component.cancel, 'emit');
+
+    component.onCancel();
+
+    expect(emitSpy).toHaveBeenCalled();
   });
 
-  xit('should reset form on cancel', () => {
-    // @fixme complete this test
+  it('should reset the form on cancel', () => {
+    component.productForm.setValue({
+      name: 'Test Product',
+      description: 'Test Description',
+      department: 'Test Department'
+    });
+
+    component.onCancel();
+
+    expect(component.productForm.get('name')?.value).toBe('');
+    expect(component.productForm.get('description')?.value).toBe('');
+    expect(component.productForm.get('department')?.value).toBe('');
   });
 
   it('should populate form when product input changes', () => {
@@ -136,5 +150,26 @@ describe('ProductFormComponent', () => {
     expect(component.shouldShowError('name')).toBe(false);
     expect(component.shouldShowError('description')).toBe(false);
     expect(component.shouldShowError('department')).toBe(false);
+  });
+
+  it('should reset the form when reset emits an event', () => {
+    const resetEmitter = new Subject<void>();
+    component.reset = resetEmitter.asObservable();
+    
+    component.ngOnInit()
+
+    component.productForm.setValue({
+      name: 'Test Product',
+      description: 'Test Description',
+      department: 'Test Department'
+    });
+
+    expect(component.productForm.get('name')?.value).toBe('Test Product');
+
+    resetEmitter.next();
+    
+    expect(component.productForm.get('name')?.value).toBe('');
+    expect(component.productForm.get('description')?.value).toBe('');
+    expect(component.productForm.get('department')?.value).toBe('');
   });
 });
