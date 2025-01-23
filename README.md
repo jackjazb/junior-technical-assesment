@@ -1,5 +1,14 @@
 # Junior Technical Assesment
 
+## Approach
+
+My initial approach for this task was to gain some familiarity with Angular and its best practices before making a start on any changes, primarily using the guides and tutorials on angular.dev.
+
+The first change I made to the project was to factor out the product card component. This seemed like a good way to gain an understanding of Angular's components, and I felt refactoring was a good entry point into learning the codebase. I then moved on to fixing the ambiguous main form validation errors - this involved making the errors for the name field consistent with those shown by description. I also implemented the missing unit tests - in general, I used the existing code as a reference in an effort to keep standards and practices consistent across the codebase.
+
+I enjoyed the chance to exercise some creativity when implementing an improved error feedback system, designing a toast component and service to display timed messages, which also gave me a chance to begin learning both RxJS and Angular's animation system. To ensure clarity for users, I then implemented some simple formatting for the errors returned by the product service. While developing the component I introduced a bug caused by a new toast being cleared by the previous toast's timeout - having fixed this, I introduced a unit test to ensure such cases function correctly in future. With the toast system implemented, I decided to add a second "success" toast type to be shown when operations are successful.
+
+---
 This is a basic technical test for potential Kore developers.
 
 This has been designed to provide an insight into the type of projects you'll be working on day to day.
@@ -15,15 +24,10 @@ Before doing anything you will need to clone this repo and install the dependanc
 We then have some simple tasks we'd like you to attempt, these are shown within the code using `@fixme`.
 
 1. Refactor the product card out of the main app component into it's own (with tests)
-    - I've created a new component which accepts a product as input and emits "Edit" or "Delete" events based on button presses containing the card's product as a payload. These are used to trigger the callbacks in the `app` component.
 1. Ensure errors during create/update of a product are shown to the user
-    - I've added a toast service which allows a message to be set and then automatically clears it after a fixed timeout. I also implemented a new component to display the current value of this message in a fixed position div in the lower left. I then decided to re-use the service for success messages to keep the UX of the app consistent.
 1. Provide meaningful feedback to the user depending on the validation error
-    - I've improved the granularity of the errors in `product-form` by altering their contents based on the current validation errors. I also added additional functionality to the toast service to format and display product service validation errors.
 1. Ensure form data is not lost if errors occur
-    - As the save and update functions are asynchronous, I've changed form reset to be event-driven. The `product-form` component now accepts an Observable, which the parent uses to pass a reset event emitter. Events are emitted when product updates are successful.
 1. Complete the missing tests
-    - I've filled in unimplemented tests and added unit coverage for all new components and services. I've tried to avoid unnecessary mocks to test the true behaviour of the UI.
 
 ## Development server
 
