@@ -34,22 +34,6 @@ describe('AppComponent', () => {
   beforeEach(async () => {
     const mockProductService = {
       getProducts: jest.fn().mockReturnValue(of(mockProducts)),
-      createProduct: jest.fn().mockImplementation((product) =>
-        of({
-          ...product,
-          id: '3',
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-      ),
-      updateProduct: jest.fn().mockImplementation((id, product) =>
-        of({
-          ...product,
-          id,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-      ),
       deleteProduct: jest.fn().mockReturnValue(of(true))
     };
 
@@ -66,7 +50,6 @@ describe('AppComponent', () => {
       providers: [
         { provide: ProductService, useValue: mockProductService },
         { provide: ToastService, useValue: mockToastService },
-
       ]
     }).compileComponents();
 
@@ -89,35 +72,14 @@ describe('AppComponent', () => {
     expect(component.isLoading).toBe(false);
   }));
 
-  it('should create a new product', fakeAsync(() => {
-    const newProduct = {
-      name: 'New Product',
-      description: 'New Description',
-      department: 'New Department'
-    };
-
-    component.onSaveProduct(newProduct);
-    tick(500);
-
-    expect(productService.createProduct).toHaveBeenCalledWith(newProduct);
+  it('should reload products on form submission', fakeAsync(() => {
+    component.selectedProduct = mockProducts[0]
+    component.onFormSuccess()
+    tick(500)
     expect(productService.getProducts).toHaveBeenCalled();
-  }));
-
-  it('should update an existing product', fakeAsync(() => {
-    const updateData = {
-      name: 'Updated Product',
-      description: 'Updated Description',
-      department: 'Updated Department'
-    };
-
-    component.selectedProduct = mockProducts[0];
-    component.onSaveProduct(updateData);
-    tick(500);
-
-    expect(productService.updateProduct).toHaveBeenCalledWith('1', updateData);
-    expect(productService.getProducts).toHaveBeenCalled();
+    expect(component.products).toEqual(mockProducts);
+    expect(component.isLoading).toBe(false);
     expect(component.selectedProduct).toBeUndefined();
-    expect(toastService.set).toHaveBeenCalled();
   }));
 
   it('should delete a product', fakeAsync(() => {
@@ -147,33 +109,6 @@ describe('AppComponent', () => {
 
     expect(toastService.setError).toHaveBeenCalled();
     expect(component.isLoading).toBe(false);
-  }));
-
-  it('should handle error when creating product', fakeAsync(() => {
-    productService.createProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
-
-    component.onSaveProduct({
-      name: 'Test',
-      description: 'Test',
-      department: 'Test'
-    });
-    tick(500);
-
-    expect(toastService.setError).toHaveBeenCalled();
-  }));
-
-  it('should handle error when updating product', fakeAsync(() => {
-    productService.updateProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
-
-    component.selectedProduct = mockProducts[0];
-    component.onSaveProduct({
-      name: 'Test',
-      description: 'Test',
-      department: 'Test'
-    });
-    tick(500);
-
-    expect(toastService.setError).toHaveBeenCalled();
   }));
 
   it('should handle error when deleting product', fakeAsync(() => {

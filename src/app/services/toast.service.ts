@@ -18,17 +18,19 @@ export type Toast = {
 };
 
 /**
- * Provides an interface for adding a toast message.
+ * Provides a means for creating a toast message.
  * Removes messages after a fixed duration.
  */
 @Injectable({
   providedIn: 'root'
 })
 export class ToastService {
-  // Emits a a new toast to subscribers when its value changes.
+  /**
+   * Emits a a new toast to subscribers when its value changes.
+   */ 
   toast = new Subject<Toast | undefined>();
 
-  private timeout: number | undefined;
+  private timeoutId: number | undefined;
 
   /**
    * Helper function for formatting an error and setting it as the current toast.
@@ -46,15 +48,15 @@ export class ToastService {
    * Sets the current toast message and type. Also resets any pending toast timeouts.
    */
   set(type: ToastType, message: string, sub?: string) {
-    // Reset any existing timeouts.
-    clearTimeout(this.timeout);
+    clearTimeout(this.timeoutId);
+
     this.toast.next({
       type,
       message,
       sub
     });
 
-    this.timeout = setTimeout(() => {
+    this.timeoutId = setTimeout(() => {
       this.toast.next(undefined);
     }, TOAST_TIMEOUT);
   }

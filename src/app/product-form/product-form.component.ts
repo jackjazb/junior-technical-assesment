@@ -1,38 +1,43 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Observable } from 'rxjs';
 import { Product } from '../models/product.model';
+import { ProductService } from '../services/product.service';
+import { ToastService } from '../services/toast.service';
 
 @Component({
   selector: 'app-product-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './product-form.component.html'
+  templateUrl: './product-form.component.html',
 })
 export class ProductFormComponent implements OnChanges {
-  // Allows a product to be passed for editing.
+  /**
+   * Allows a product to be passed for editing.
+   * If this is not set, the form will create new products on submit.
+   */
   @Input() product?: Product;
-  // Triggers a reset when an event is emitted.
-  @Input({ required: true }) reset: Observable<void> = new Observable();
-
-  @Output() save = new EventEmitter<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>();
+  /**
+   * Emits when the form is cancelled.
+   */
   @Output() cancel = new EventEmitter<void>();
+  /** 
+   * Emits when a product creates or updates successfully.
+   */
+  @Output() success = new EventEmitter<void>();
 
   productForm: FormGroup;
   isSubmitted = false;
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private toastService: ToastService,
+    private productService: ProductService
+  ) {
     this.productForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
       department: ['', Validators.required]
-    });
-  }
-
-  ngOnInit() {
-    this.reset.subscribe(() => {
-      this.resetForm();
     });
   }
 
@@ -50,9 +55,35 @@ export class ProductFormComponent implements OnChanges {
 
   onSubmit(): void {
     this.isSubmitted = true;
-    if (this.productForm.valid) {
-      this.save.emit(this.productForm.value);
+    if (!this.productForm.valid) {
+      return;
     }
+
+    const product = this.productForm.value;
+    if (this.product) {
+      this.productService.updateProduct(this.product.id, product).subscribe({
+        next: () => {
+          this.toastService.set('success', 'Product updated.');
+          this.success.emit();
+          this.resetForm();
+        },
+        error: (error) => {
+          this.toastService.setError('Error updating product', error);
+        }
+      });
+    } else {
+      this.productService.createProduct(product).subscribe({
+        next: () => {
+          this.toastService.set('success', 'Product created.');
+          this.success.emit();
+          this.resetForm();
+        },
+        error: (error) => {
+          this.toastService.setError('Error creating product', error);
+        }
+      });
+    }
+
   }
 
   onCancel(): void {

@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Subject } from 'rxjs';
 import { Product } from './models/product.model';
 import { ProductCardComponent } from './product-card/product-card.component';
 import { ProductFormComponent } from './product-form/product-form.component';
@@ -16,14 +15,14 @@ import { ToastComponent } from './toast/toast.component';
 })
 export class AppComponent implements OnInit {
   title = 'junior-technical-assessment';
+
+  // If set, holds the currently edited product.
   selectedProduct?: Product;
   products: Product[] = [];
   isLoading = false;
 
-  // Event emitter for triggering resets in product-form-component.
-  resetForm = new Subject<void>();
-
-  constructor(private productService: ProductService, private toastService: ToastService) { }
+  constructor(
+    private productService: ProductService, private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -43,31 +42,9 @@ export class AppComponent implements OnInit {
     });
   }
 
-  onSaveProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): void {
-    if (this.selectedProduct) {
-      this.productService.updateProduct(this.selectedProduct.id, productData).subscribe({
-        next: () => {
-          this.toastService.set('success', 'Product updated.');
-          this.loadProducts();
-          this.selectedProduct = undefined;
-          this.resetForm.next();
-        },
-        error: (error) => {
-          this.toastService.setError('Error updating product', error);
-        }
-      });
-    } else {
-      this.productService.createProduct(productData).subscribe({
-        next: () => {
-          this.toastService.set('success', 'Product created.');
-          this.loadProducts();
-          this.resetForm.next();
-        },
-        error: (error) => {
-          this.toastService.setError('Error creating product', error);
-        }
-      });
-    }
+  onFormSuccess() {
+    this.selectedProduct = undefined;
+    this.loadProducts();
   }
 
   onEditProduct(product: Product): void {
