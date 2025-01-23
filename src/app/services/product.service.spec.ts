@@ -1,6 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ProductService } from './product.service';
-import { Product } from '../models/product.model';
 
 describe('ProductService', () => {
   let service: ProductService;

@@ -1,14 +1,16 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
 import { AppComponent } from './app.component';
+import { Product } from './models/product.model';
 import { ProductFormComponent } from './product-form/product-form.component';
 import { ProductService } from './services/product.service';
-import { Product } from './models/product.model';
-import { Observable, of, throwError } from 'rxjs';
+import { ToastService } from './services/toast.service';
 
 describe('AppComponent', () => {
   let component: AppComponent;
   let fixture: ComponentFixture<AppComponent>;
   let productService: jest.Mocked<ProductService>;
+  let toastService: jest.Mocked<ToastService>;
 
   const mockProducts: Product[] = [
     {
@@ -51,16 +53,27 @@ describe('AppComponent', () => {
       deleteProduct: jest.fn().mockReturnValue(of(true))
     };
 
+    const mockToastService = {
+      toast:{
+        subscribe: jest.fn()
+      },
+      setError: jest.fn(),
+      set: jest.fn()
+    };
+
     await TestBed.configureTestingModule({
       imports: [AppComponent, ProductFormComponent],
       providers: [
-        { provide: ProductService, useValue: mockProductService }
+        { provide: ProductService, useValue: mockProductService },
+        { provide: ToastService, useValue: mockToastService },
+
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(AppComponent);
     component = fixture.componentInstance;
     productService = TestBed.inject(ProductService) as jest.Mocked<ProductService>;
+    toastService = TestBed.inject(ToastService) as jest.Mocked<ToastService>;
     fixture.detectChanges();
   });
 
@@ -104,6 +117,7 @@ describe('AppComponent', () => {
     expect(productService.updateProduct).toHaveBeenCalledWith('1', updateData);
     expect(productService.getProducts).toHaveBeenCalled();
     expect(component.selectedProduct).toBeUndefined();
+    expect(toastService.set).toHaveBeenCalled();
   }));
 
   it('should delete a product', fakeAsync(() => {
@@ -126,20 +140,16 @@ describe('AppComponent', () => {
   });
 
   it('should handle error when loading products', fakeAsync(() => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     productService.getProducts.mockReturnValueOnce(throwError(() => new Error('Test error')));
 
     component.ngOnInit();
     tick(500);
 
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(toastService.setError).toHaveBeenCalled();
     expect(component.isLoading).toBe(false);
-
-    consoleErrorSpy.mockRestore();
   }));
 
   it('should handle error when creating product', fakeAsync(() => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     productService.createProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
 
     component.onSaveProduct({
@@ -149,12 +159,10 @@ describe('AppComponent', () => {
     });
     tick(500);
 
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    expect(toastService.setError).toHaveBeenCalled();
   }));
 
   it('should handle error when updating product', fakeAsync(() => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     productService.updateProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
 
     component.selectedProduct = mockProducts[0];
@@ -165,18 +173,15 @@ describe('AppComponent', () => {
     });
     tick(500);
 
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    expect(toastService.setError).toHaveBeenCalled();
   }));
 
   it('should handle error when deleting product', fakeAsync(() => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     productService.deleteProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
 
     component.onDeleteProduct(mockProducts[0]);
     tick(500);
 
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    expect(toastService.setError).toHaveBeenCalled();
   }));
 });

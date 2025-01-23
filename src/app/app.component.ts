@@ -1,23 +1,29 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { Subject } from 'rxjs';
+import { Product } from './models/product.model';
+import { ProductCardComponent } from './product-card/product-card.component';
 import { ProductFormComponent } from './product-form/product-form.component';
 import { ProductService } from './services/product.service';
-import { Product } from './models/product.model';
+import { ToastService } from './services/toast.service';
+import { ToastComponent } from './toast/toast.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, ProductFormComponent],
+  imports: [CommonModule, ProductFormComponent, ProductCardComponent, ToastComponent],
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {
-  title = 'junior-technical-assesment';
+  title = 'junior-technical-assessment';
   selectedProduct?: Product;
   products: Product[] = [];
   isLoading = false;
 
-  constructor(private productService: ProductService) {}
+  // Event emitter for triggering resets in product-form-component.
+  resetForm = new Subject<void>();
+
+  constructor(private productService: ProductService, private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -31,7 +37,7 @@ export class AppComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Error loading products:', error);
+        this.toastService.setError('Error loading product', error);
         this.isLoading = false;
       }
     });
@@ -41,19 +47,25 @@ export class AppComponent implements OnInit {
     if (this.selectedProduct) {
       this.productService.updateProduct(this.selectedProduct.id, productData).subscribe({
         next: () => {
+          this.toastService.set('success', 'Product updated.');
           this.loadProducts();
           this.selectedProduct = undefined;
+          this.resetForm.next();
         },
-        // @fixme show errors to user
-        error: (error) => console.error('Error updating product:', error)
+        error: (error) => {
+          this.toastService.setError('Error updating product', error);
+        }
       });
     } else {
       this.productService.createProduct(productData).subscribe({
         next: () => {
+          this.toastService.set('success', 'Product created.');
           this.loadProducts();
+          this.resetForm.next();
         },
-        // @fixme show errors to user
-        error: (error) => console.error('Error creating product:', error)
+        error: (error) => {
+          this.toastService.setError('Error creating product', error);
+        }
       });
     }
   }
@@ -66,10 +78,14 @@ export class AppComponent implements OnInit {
     this.productService.deleteProduct(product.id).subscribe({
       next: (success) => {
         if (success) {
+          this.toastService.set('success', 'Product deleted.');
           this.loadProducts();
         }
       },
-      error: (error) => console.error('Error deleting product:', error)
+
+      error: (error) => {
+        this.toastService.setError('Error deleting product', error);
+      }
     });
   }
 

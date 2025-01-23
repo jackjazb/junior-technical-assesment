@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Observable } from 'rxjs';
 import { Product } from '../models/product.model';
 
 @Component({
@@ -10,7 +11,11 @@ import { Product } from '../models/product.model';
   templateUrl: './product-form.component.html'
 })
 export class ProductFormComponent implements OnChanges {
+  // Allows a product to be passed for editing.
   @Input() product?: Product;
+  // Triggers a reset when an event is emitted.
+  @Input({ required: true }) reset: Observable<void> = new Observable();
+
   @Output() save = new EventEmitter<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -22,6 +27,12 @@ export class ProductFormComponent implements OnChanges {
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
       department: ['', Validators.required]
+    });
+  }
+
+  ngOnInit() {
+    this.reset.subscribe(() => {
+      this.resetForm();
     });
   }
 
@@ -37,13 +48,10 @@ export class ProductFormComponent implements OnChanges {
     }
   }
 
-  // @fixme do not reset the form if there are errors
   onSubmit(): void {
     this.isSubmitted = true;
-
     if (this.productForm.valid) {
       this.save.emit(this.productForm.value);
-      this.resetForm();
     }
   }
 
