@@ -1,20 +1,57 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { Product } from '../models/product.model';
+import { ProductService } from '../services/product.service';
+import { ToastService } from '../services/toast.service';
 import { ProductFormComponent } from './product-form.component';
 
 describe('ProductFormComponent', () => {
   let component: ProductFormComponent;
   let fixture: ComponentFixture<ProductFormComponent>;
+  let productService: jest.Mocked<ProductService>;
+  let toastService: jest.Mocked<ToastService>;
 
   beforeEach(async () => {
+    const mockProductService = {
+      createProduct: jest.fn().mockImplementation((product) =>
+        of({
+          ...product,
+          id: '3',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+      ),
+      updateProduct: jest.fn().mockImplementation((id, product) =>
+        of({
+          ...product,
+          id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+      ),
+    };
+
+    const mockToastService = {
+      toast: {
+        subscribe: jest.fn()
+      },
+      setError: jest.fn(),
+      set: jest.fn()
+    };
+
     await TestBed.configureTestingModule({
-      imports: [ProductFormComponent, ReactiveFormsModule]
+      imports: [ProductFormComponent, ReactiveFormsModule],
+      providers: [
+        { provide: ProductService, useValue: mockProductService },
+        { provide: ToastService, useValue: mockToastService },
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProductFormComponent);
     component = fixture.componentInstance;
+    productService = TestBed.inject(ProductService) as jest.Mocked<ProductService>;
+    toastService = TestBed.inject(ToastService) as jest.Mocked<ToastService>;
     fixture.detectChanges();
   });
 
@@ -59,26 +96,93 @@ describe('ProductFormComponent', () => {
     expect(descControl.errors).toBeNull();
   });
 
-  it('should emit save event with form data when valid', () => {
-    const emitSpy = jest.spyOn(component.save, 'emit');
+  it('should create a new product', fakeAsync(() => {
+    const emitSpy = jest.spyOn(component.success, 'emit');
+    const newProduct = {
+      name: 'New Product',
+      description: 'New Description',
+      department: 'New Department'
+    };
+
+    component.productForm.setValue(newProduct);
+    component.onSubmit();
+    tick(500);
+
+    expect(productService.createProduct).toHaveBeenCalledWith(newProduct);
+    expect(emitSpy).toHaveBeenCalled();
+  }));
+
+  it('should update an existing product', fakeAsync(() => {
+    const emitSpy = jest.spyOn(component.success, 'emit');
+    component.product = {
+      id: '1',
+      name: 'Test Product 1',
+      description: 'Test Description 1',
+      department: 'Test Department 1',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const updatedProduct = {
+      name: 'Updated Product',
+      description: 'Updated Description',
+      department: 'Updated Department'
+    };
+
+    component.productForm.setValue(updatedProduct);
+    component.onSubmit();
+    tick(500);
+
+    expect(productService.updateProduct).toHaveBeenCalledWith('1', updatedProduct);
+    expect(toastService.set).toHaveBeenCalled();
+    expect(emitSpy).toHaveBeenCalled();
+  }));
+
+  it('should handle errors when creating a product', fakeAsync(() => {
+    productService.createProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
+    const emitSpy = jest.spyOn(component.success, 'emit');
 
     component.productForm.setValue({
-      name: 'Test Product',
-      description: 'Test Description',
-      department: 'Test Department'
+      name: 'New Product',
+      description: 'New Description',
+      department: 'New Department'
     });
 
     component.onSubmit();
+    tick(500);
 
-    expect(emitSpy).toHaveBeenCalledWith({
-      name: 'Test Product',
-      description: 'Test Description',
-      department: 'Test Department'
+    expect(toastService.setError).toHaveBeenCalled();
+    expect(emitSpy).not.toHaveBeenCalled();
+  }));
+
+  it('should handle errors when updating a product', fakeAsync(() => {
+    productService.updateProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
+    const emitSpy = jest.spyOn(component.success, 'emit');
+
+    component.product = {
+      id: '1',
+      name: 'Test Product 1',
+      description: 'Test Description 1',
+      department: 'Test Department 1',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    component.productForm.setValue({
+      name: 'New Product',
+      description: 'New Description',
+      department: 'New Department'
     });
-  });
 
-  it('should not emit save event when form is invalid', () => {
-    const emitSpy = jest.spyOn(component.save, 'emit');
+    component.onSubmit();
+    tick(500);
+
+    expect(toastService.setError).toHaveBeenCalled();
+    expect(emitSpy).not.toHaveBeenCalled();
+  }));
+
+  it('should not emit the success event when the form is invalid', fakeAsync(() => {
+    const emitSpy = jest.spyOn(component.success, 'emit');
 
     component.productForm.setValue({
       name: 'ab',
@@ -87,11 +191,12 @@ describe('ProductFormComponent', () => {
     });
 
     component.onSubmit();
+    tick(500);
 
     expect(emitSpy).not.toHaveBeenCalled();
-  });
+  }));
 
-  it('should emit the cancel event', () => {
+  it('should emit cancel event', () => {
     const emitSpy = jest.spyOn(component.cancel, 'emit');
 
     component.onCancel();
@@ -99,7 +204,7 @@ describe('ProductFormComponent', () => {
     expect(emitSpy).toHaveBeenCalled();
   });
 
-  it('should reset the form on cancel', () => {
+  it('should reset form on cancel', () => {
     component.productForm.setValue({
       name: 'Test Product',
       description: 'Test Description',
@@ -152,24 +257,4 @@ describe('ProductFormComponent', () => {
     expect(component.shouldShowError('department')).toBe(false);
   });
 
-  it('should reset the form when reset emits an event', () => {
-    const resetEmitter = new Subject<void>();
-    component.reset = resetEmitter.asObservable();
-    
-    component.ngOnInit()
-
-    component.productForm.setValue({
-      name: 'Test Product',
-      description: 'Test Description',
-      department: 'Test Department'
-    });
-
-    expect(component.productForm.get('name')?.value).toBe('Test Product');
-
-    resetEmitter.next();
-    
-    expect(component.productForm.get('name')?.value).toBe('');
-    expect(component.productForm.get('description')?.value).toBe('');
-    expect(component.productForm.get('department')?.value).toBe('');
-  });
 });

@@ -31,4 +31,12 @@ describe('ToastComponent', () => {
     const toastElement = fixture.nativeElement;
     expect(toastElement.textContent).toContain('New Message');
   });
+
+  it('should display the current toast sub text if provided', () => {
+    toastService.set('success','New Message', 'Sub Message');
+    fixture.detectChanges();
+    const toastElement = fixture.nativeElement;
+    expect(toastElement.textContent).toContain('New Message');
+    expect(toastElement.textContent).toContain('Sub Message');
+  });
 });
