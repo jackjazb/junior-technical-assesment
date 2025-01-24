@@ -38,7 +38,7 @@ describe('AppComponent', () => {
     };
 
     const mockToastService = {
-      toast:{
+      toast: {
         subscribe: jest.fn()
       },
       setError: jest.fn(),
@@ -73,9 +73,9 @@ describe('AppComponent', () => {
   }));
 
   it('should reload products on form submission', fakeAsync(() => {
-    component.selectedProduct = mockProducts[0]
-    component.onFormSuccess()
-    tick(500)
+    component.selectedProduct = mockProducts[0];
+    component.onFormSuccess();
+    tick(500);
     expect(productService.getProducts).toHaveBeenCalled();
     expect(component.products).toEqual(mockProducts);
     expect(component.isLoading).toBe(false);
@@ -102,21 +102,21 @@ describe('AppComponent', () => {
   });
 
   it('should handle error when loading products', fakeAsync(() => {
-    productService.getProducts.mockReturnValueOnce(throwError(() => new Error('Test error')));
+    productService.getProducts.mockReturnValueOnce(throwError(() => ({ message: 'Error' })));
 
     component.ngOnInit();
     tick(500);
 
-    expect(toastService.setError).toHaveBeenCalled();
+    expect(toastService.setError).toHaveBeenCalledWith(expect.any(String), { message: 'Error' });
     expect(component.isLoading).toBe(false);
   }));
 
   it('should handle error when deleting product', fakeAsync(() => {
-    productService.deleteProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
+    productService.deleteProduct.mockReturnValueOnce(throwError(() => ({ message: 'Error' })));
 
     component.onDeleteProduct(mockProducts[0]);
     tick(500);
 
-    expect(toastService.setError).toHaveBeenCalled();
+    expect(toastService.setError).toHaveBeenCalledWith(expect.any(String), { message: 'Error' });
   }));
 });

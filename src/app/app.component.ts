@@ -14,15 +14,14 @@ import { ToastComponent } from './toast/toast.component';
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {
-  title = 'junior-technical-assessment';
+  title = 'junior-technical-assesment';
 
   // If set, holds the currently edited product.
   selectedProduct?: Product;
   products: Product[] = [];
   isLoading = false;
 
-  constructor(
-    private productService: ProductService, private toastService: ToastService) { }
+  constructor(private productService: ProductService, private toastService: ToastService) { }
 
   ngOnInit(): void {
     this.loadProducts();
@@ -36,7 +35,7 @@ export class AppComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        this.toastService.setError('Error loading product', error);
+        this.toastService.setError('Error loading products', error);
         this.isLoading = false;
       }
     });
@@ -59,7 +58,6 @@ export class AppComponent implements OnInit {
           this.loadProducts();
         }
       },
-
       error: (error) => {
         this.toastService.setError('Error deleting product', error);
       }

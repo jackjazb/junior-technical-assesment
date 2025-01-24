@@ -33,7 +33,7 @@ export class ToastService {
   private timeoutId: number | undefined;
 
   /**
-   * Helper function for formatting an error and setting it as the current toast.
+   * Helper function for formatting a product service error and setting it as the current toast.
    */
   setError(text: string, error: { message: string, errors?: string[]; }) {
     const { message, errors } = error;

@@ -12,7 +12,26 @@ describe('ProductFormComponent', () => {
   let productService: jest.Mocked<ProductService>;
   let toastService: jest.Mocked<ToastService>;
 
+  let validProductInput: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>;
+  let existingProduct: Product;
+
   beforeEach(async () => {
+    // This product is valid for the current product form validation rules.
+    validProductInput = {
+      name: 'New Product',
+      description: 'New Description',
+      department: 'New Department'
+    };
+
+    existingProduct = {
+      id: '1',
+      name: 'Product',
+      description: 'Existing Description',
+      department: 'Department',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
     const mockProductService = {
       createProduct: jest.fn().mockImplementation((product) =>
         of({
@@ -97,32 +116,49 @@ describe('ProductFormComponent', () => {
   });
 
   it('should create a new product', fakeAsync(() => {
-    const emitSpy = jest.spyOn(component.success, 'emit');
-    const newProduct = {
-      name: 'New Product',
-      description: 'New Description',
-      department: 'New Department'
-    };
-
-    component.productForm.setValue(newProduct);
+    component.productForm.setValue(validProductInput);
     component.onSubmit();
     tick(500);
 
-    expect(productService.createProduct).toHaveBeenCalledWith(newProduct);
+    expect(productService.createProduct).toHaveBeenCalledWith(validProductInput);
+  }));
+
+  it('should create a success toast when creating a product', fakeAsync(() => {
+    component.productForm.setValue(validProductInput);
+    component.onSubmit();
+    tick(500);
+
+    expect(toastService.set).toHaveBeenCalledWith('success', expect.any(String));
+  }));
+
+  it('should emit success events on product creation', fakeAsync(() => {
+    const emitSpy = jest.spyOn(component.success, 'emit');
+
+    component.productForm.setValue(validProductInput);
+    component.onSubmit();
+    tick(500);
+
     expect(emitSpy).toHaveBeenCalled();
   }));
 
   it('should update an existing product', fakeAsync(() => {
-    const emitSpy = jest.spyOn(component.success, 'emit');
-    component.product = {
-      id: '1',
-      name: 'Test Product 1',
-      description: 'Test Description 1',
-      department: 'Test Department 1',
-      createdAt: new Date(),
-      updatedAt: new Date()
+    component.product = existingProduct;
+    const updatedProduct = {
+      name: 'Updated Product',
+      description: 'Updated Description',
+      department: 'Updated Department'
     };
+    component.productForm.setValue(updatedProduct);
+    component.onSubmit();
+    tick(500);
 
+    expect(productService.updateProduct).toHaveBeenCalledWith(existingProduct.id, updatedProduct);
+  }));
+
+  it('should emit success events on product update', fakeAsync(() => {
+    const emitSpy = jest.spyOn(component.success, 'emit');
+
+    component.product = existingProduct;
     const updatedProduct = {
       name: 'Updated Product',
       description: 'Updated Description',
@@ -133,41 +169,50 @@ describe('ProductFormComponent', () => {
     component.onSubmit();
     tick(500);
 
-    expect(productService.updateProduct).toHaveBeenCalledWith('1', updatedProduct);
-    expect(toastService.set).toHaveBeenCalled();
     expect(emitSpy).toHaveBeenCalled();
   }));
 
-  it('should handle errors when creating a product', fakeAsync(() => {
-    productService.createProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
-    const emitSpy = jest.spyOn(component.success, 'emit');
+  it('should create a success toast on product update', fakeAsync(() => {
+    component.product = existingProduct;
+    const updatedProduct = {
+      name: 'Updated Product',
+      description: 'Updated Description',
+      department: 'Updated Department'
+    };
 
-    component.productForm.setValue({
-      name: 'New Product',
-      description: 'New Description',
-      department: 'New Department'
-    });
-
+    component.productForm.setValue(updatedProduct);
     component.onSubmit();
     tick(500);
 
-    expect(toastService.setError).toHaveBeenCalled();
+    expect(toastService.set).toHaveBeenCalledWith('success', expect.any(String));
+  }));
+
+  it('should handle errors when creating a product', fakeAsync(() => {
+    productService.createProduct.mockReturnValueOnce(throwError(() => ({ message: 'Error' })));
+    const emitSpy = jest.spyOn(component.success, 'emit');
+
+    component.productForm.setValue(validProductInput);
+    component.onSubmit();
+    tick(500);
+
     expect(emitSpy).not.toHaveBeenCalled();
+  }));
+
+  it('should create an error toast when creating a product fails', fakeAsync(() => {
+    productService.createProduct.mockReturnValueOnce(throwError(() => ({ message: 'Error' })));
+
+    component.productForm.setValue(validProductInput);
+    component.onSubmit();
+    tick(500);
+
+    expect(toastService.setError).toHaveBeenCalledWith(expect.any(String), { message: 'Error' });
   }));
 
   it('should handle errors when updating a product', fakeAsync(() => {
-    productService.updateProduct.mockReturnValueOnce(throwError(() => new Error('Test error')));
+    productService.updateProduct.mockReturnValueOnce(throwError(() => ({ message: 'Error' })));
     const emitSpy = jest.spyOn(component.success, 'emit');
 
-    component.product = {
-      id: '1',
-      name: 'Test Product 1',
-      description: 'Test Description 1',
-      department: 'Test Department 1',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
+    component.product = existingProduct;
     component.productForm.setValue({
       name: 'New Product',
       description: 'New Description',
@@ -177,23 +222,56 @@ describe('ProductFormComponent', () => {
     component.onSubmit();
     tick(500);
 
-    expect(toastService.setError).toHaveBeenCalled();
     expect(emitSpy).not.toHaveBeenCalled();
   }));
 
-  it('should not emit the success event when the form is invalid', fakeAsync(() => {
-    const emitSpy = jest.spyOn(component.success, 'emit');
+  it('should create an error toast when updating a product fails', fakeAsync(() => {
+    productService.updateProduct.mockReturnValueOnce(throwError(() => ({ message: 'Error' })));
 
+    component.product = existingProduct;
     component.productForm.setValue({
-      name: 'ab',
-      description: 'short',
-      department: ''
+      name: 'New Product',
+      description: 'New Description',
+      department: 'New Department'
     });
 
     component.onSubmit();
     tick(500);
 
+    expect(toastService.setError).toHaveBeenCalledWith(expect.any(String), { message: 'Error' });
+  }));
+
+  it('should not attempt to create a product if the form is invalid', fakeAsync(() => {
+    const emitSpy = jest.spyOn(component.success, 'emit');
+
+    component.productForm.setValue({
+      name: 'T',
+      description: 'Test',
+      department: 'Test'
+    });
+    component.onSubmit();
+
+    tick(500);
+
     expect(emitSpy).not.toHaveBeenCalled();
+    expect(productService.createProduct).not.toHaveBeenCalled();
+  }));
+
+  it('should not attempt to update a product if the form is invalid', fakeAsync(() => {
+    const emitSpy = jest.spyOn(component.success, 'emit');
+
+    component.product = existingProduct;
+    component.productForm.setValue({
+      name: 'T',
+      description: 'Test',
+      department: 'Test'
+    });
+    component.onSubmit();
+
+    tick(500);
+
+    expect(emitSpy).not.toHaveBeenCalled();
+    expect(productService.updateProduct).not.toHaveBeenCalled();
   }));
 
   it('should emit cancel event', () => {
@@ -205,11 +283,7 @@ describe('ProductFormComponent', () => {
   });
 
   it('should reset form on cancel', () => {
-    component.productForm.setValue({
-      name: 'Test Product',
-      description: 'Test Description',
-      department: 'Test Department'
-    });
+    component.productForm.setValue(validProductInput);
 
     component.onCancel();
 

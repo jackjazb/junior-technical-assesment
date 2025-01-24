@@ -1,7 +1,6 @@
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Toast, ToastService } from './toast.service';
 
-
 describe('ToastService', () => {
   let service: ToastService;
 
@@ -43,7 +42,6 @@ describe('ToastService', () => {
     service.set('error', 'Error message');
     expect(current?.message).toEqual('Error message');
     expect(current?.type).toEqual('error');
-
   });
 
   it('should clear messages after a timeout', fakeAsync(() => {
@@ -71,16 +69,16 @@ describe('ToastService', () => {
     expect(current).toBe('Second');
   }));
 
-  it('should format and add errors', ()=>{
+  it('should format and add errors', () => {
     const error = {
       message: 'Validation failed',
       errors: ['Product name must be unique', 'ID must be unique']
-    }
+    };
     service.setError('Error', error);
     service.toast.subscribe(message => {
       expect(message?.message).toEqual('Error');
       expect(message?.type).toEqual('error');
       expect(message?.sub).toEqual('Validation failed: Product name must be unique, ID must be unique');
     });
-  })
+  });
 });
