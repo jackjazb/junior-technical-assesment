@@ -5,6 +5,11 @@ import { Product } from '../models/product.model';
 import { ProductService } from '../services/product.service';
 import { ToastService } from '../services/toast.service';
 
+/**
+ * Renders a `ReactiveForm` which accepts product details.
+ * Calls product service methods on create or update.
+ * Emits events when updates are successful or the form is cancelled.
+ */
 @Component({
   selector: 'app-product-form',
   standalone: true,

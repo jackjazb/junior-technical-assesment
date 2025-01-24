@@ -23,7 +23,11 @@
     @if(!isLoading){
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @for (product of products; track product){
-          <app-product-card [product]="product" (edit)="onEditProduct(product)" (delete)="onDeleteProduct(product)" />
+          <app-product-card 
+            [product]="product" 
+            (edit)="onEditProduct(product)" 
+            (delete)="onDeleteProduct(product)" 
+          />
         }
       </div>
     }

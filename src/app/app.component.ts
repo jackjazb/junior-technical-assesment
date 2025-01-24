@@ -36,7 +36,7 @@ export class AppComponent implements OnInit {
         this.isLoading = false;
       },
       error: (error) => {
-        this.toastService.setError('Error loading product', error);
+        this.toastService.setError('Error loading products', error);
         this.isLoading = false;
       }
     });
@@ -59,7 +59,6 @@ export class AppComponent implements OnInit {
           this.loadProducts();
         }
       },
-
       error: (error) => {
         this.toastService.setError('Error deleting product', error);
       }
